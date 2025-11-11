@@ -264,14 +264,12 @@ def train_with_cross_validation(cv_data_normalized, device="cpu", verbose=True):
     return cv_results
 
 
-def train_final_model(
-    cv_data_normalized, feature_cols, target_cols, device="cpu", verbose=True
-):
+def train_final_model(cv_folds, feature_cols, target_cols, device="cpu", verbose=True):
     """
     Entrena el modelo final con todos los datos de CV.
 
     Args:
-        cv_data_normalized: Datos normalizados de CV
+        cv_folds: Folds de validación cruzada con datos ORIGINALES (no normalizados)
         feature_cols: Columnas de características
         target_cols: Columnas objetivo
         device: Dispositivo (cpu/cuda)
@@ -287,20 +285,20 @@ def train_final_model(
         print("ENTRENANDO MODELO FINAL CON TODOS LOS DATOS")
         print("=" * 80)
 
-    # Combinar todos los datos de train+val
+    # Combinar todos los datos ORIGINALES de train+val
     all_train_data = []
     all_train_labels = []
 
-    for fold_data in cv_data_normalized:
-        all_train_data.append(fold_data["X_train"])
-        all_train_labels.append(fold_data["y_train"])
-        all_train_data.append(fold_data["X_val"])
-        all_train_labels.append(fold_data["y_val"])
+    for fold_data in cv_folds:
+        all_train_data.append(fold_data["train"][feature_cols])
+        all_train_labels.append(fold_data["train"][target_cols])
+        all_train_data.append(fold_data["val"][feature_cols])
+        all_train_labels.append(fold_data["val"][target_cols])
 
     X_final = pd.concat(all_train_data, ignore_index=True)
     y_final = pd.concat(all_train_labels, ignore_index=True)
 
-    # Scalers finales (con TODOS los datos)
+    # Scalers finales (con TODOS los datos ORIGINALES)
     scaler_X_final = StandardScaler()
     scaler_y_final = StandardScaler()
 
@@ -409,7 +407,9 @@ def load_model_for_inference():
         output_size=config["output_size"],
         dropout=config["dropout"],
     )
-    model.load_state_dict(torch.load(MODEL_PATH, map_location=device))
+    model.load_state_dict(
+        torch.load(MODEL_PATH, map_location=device, weights_only=True)
+    )
     model.to(device)
     model.eval()
 

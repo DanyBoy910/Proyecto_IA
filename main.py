@@ -55,7 +55,7 @@ def train_pipeline():
 
     # 6. Entrenar modelo final
     final_model, scaler_X_final, scaler_y_final = train_final_model(
-        cv_data_normalized, feature_cols, target_cols, device=device, verbose=True
+        cv_folds, feature_cols, target_cols, device=device, verbose=True
     )
 
     # 7. Guardar modelo

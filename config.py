@@ -48,7 +48,7 @@ BATCH_SIZE = 64
 EPOCHS = 100
 LEARNING_RATE = 0.002
 WEIGHT_DECAY = 0.01
-PATIENCE = 100
+PATIENCE = 50
 
 # ============================================================================
 # RUTAS DE ARCHIVOS
