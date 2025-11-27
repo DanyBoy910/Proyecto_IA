@@ -25,7 +25,7 @@ hojas_a_procesar = [
     # trata de forma diferente a las hojas que no tienen hora
     {"sheet_name": "Velocidad del Viento (VV)", "var_name": "VV", "tipo": "secuencial_variable"},
     {"sheet_name": "Humedad Relativa (HR)", "var_name": "HR", "tipo": "secuencial_variable"},
-    {"sheet_name": "Temperatura (TEMP)", "var_name": "T", "tipo": "secuencial_variable"},
+    {"sheet_name": "Temperatura (TEMP)", "var_name": "T", "tipo": "horario"},
     {"sheet_name": "Presión Barométrica (PB)", "var_name": "PB", "tipo": "secuencial_variable"},
     {"sheet_name": "Radiación Solar (RS)", "var_name": "RS", "tipo": "secuencial_variable"},
     {"sheet_name": "Precipitación Pluvial (PP)", "var_name": "PP", "tipo": "secuencial_variable"}
@@ -92,15 +92,40 @@ else:
             # CASO "horario": Mapeo 1 a 1 usando la columna 'Hora'
             # ---
             if tipo_proceso == "horario":
-                if 'Hora' not in df.columns or df['Hora'].isnull().all():
-                    print(f"  > ADVERTENCIA (Hoja {sheet_name}): Se esperaba 'horario' pero no hay datos en la columna 'Hora'. Se omitirá.")
-                    continue
-                
                 print(f"  > Procesando Hoja '{sheet_name}' (HORARIA)...")
-                df_hourly = df[['Fecha', 'Hora', columna_valor_nombre]].copy()
-                df_hourly.rename(columns={columna_valor_nombre: var_name}, inplace=True)
-                df_hourly['Fecha'] = df_hourly['Fecha'].astype(str)
-                df_hourly['Hora'] = df_hourly['Hora'].astype(str)
+                
+                # Verificar si la columna 'Hora' tiene datos o si la hora está en 'Fecha'
+                if 'Hora' not in df.columns or df['Hora'].isnull().all():
+                    # La hora está en la columna Fecha (formato datetime)
+                    df_hourly = df[['Fecha', columna_valor_nombre]].copy()
+                    df_hourly.rename(columns={columna_valor_nombre: var_name}, inplace=True)
+                    
+                    # Convertir Fecha a datetime si no lo es
+                    if df_hourly['Fecha'].dtype == 'object':
+                        df_hourly['Fecha'] = pd.to_datetime(df_hourly['Fecha'])
+                    
+                    # Extraer fecha y hora
+                    df_hourly['Fecha_str'] = df_hourly['Fecha'].dt.strftime('%Y-%m-%d')
+                    hora_num = df_hourly['Fecha'].dt.hour
+                    
+                    # Crear formato "HH:00 - HH+1:00"
+                    def format_hora(h):
+                        if pd.isna(h):
+                            return None
+                        h = int(h)
+                        prev_h = (h - 1) % 24
+                        return f"{prev_h}:00 - {h}:00"
+                    
+                    df_hourly['Hora'] = hora_num.apply(format_hora)
+                    df_hourly['Fecha'] = df_hourly['Fecha_str']
+                    df_hourly = df_hourly.drop(columns=['Fecha_str'])
+                else:
+                    # La columna Hora tiene datos
+                    df_hourly = df[['Fecha', 'Hora', columna_valor_nombre]].copy()
+                    df_hourly.rename(columns={columna_valor_nombre: var_name}, inplace=True)
+                    df_hourly['Fecha'] = df_hourly['Fecha'].astype(str).str.split('T').str[0]
+                    df_hourly['Hora'] = df_hourly['Hora'].astype(str)
+                
                 df_hourly = df_hourly.dropna(subset=['Hora'])
                 df_hourly = df_hourly[df_hourly['Hora'] != 'nan']
                 df_hourly = df_hourly.drop_duplicates(subset=["Fecha", "Hora"], keep="last")
@@ -114,7 +139,7 @@ else:
             elif tipo_proceso == "secuencial_variable":
                 print(f"  > Procesando Hoja '{sheet_name}' (SECUENCIAL VARIABLE)...")
                 df_daily_seq = df[['Fecha', columna_valor_nombre]].rename(columns={columna_valor_nombre: var_name})
-                df_daily_seq['Fecha'] = df_daily_seq['Fecha'].astype(str)
+                df_daily_seq['Fecha'] = df_daily_seq['Fecha'].astype(str).str.split('T').str[0]
 
                 # Agrupamos por fecha para procesar cada día
                 for fecha_dia, grupo_dia in df_daily_seq.groupby('Fecha'):
