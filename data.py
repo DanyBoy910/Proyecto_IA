@@ -52,8 +52,8 @@ def clean_data(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
 
     # Eliminar columna T si existe
-    if "T" in df.columns:
-        df = df.drop(columns=["T"])
+    # if "T" in df.columns:
+    # df = df.drop(columns=["T"])
 
     # Reemplazar valores negativos por 0
     for var in NON_NEGATIVE_VARIABLES:

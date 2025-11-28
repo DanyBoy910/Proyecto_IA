@@ -7,7 +7,7 @@ Configuración y constantes del proyecto de predicción de calidad del aire
 # ============================================================================
 
 # Variables meteorológicas y de contaminantes
-VAR_COLS = ["CO", "NO2", "NO", "NxOy", "O3", "P2.5", "VV", "HR", "PB", "RS", "PP"]
+VAR_COLS = ["CO", "NO2", "NO", "NxOy", "O3", "P2.5", "VV", "HR", "T", "PB", "RS", "PP"]
 
 # Variables que no pueden ser negativas
 NON_NEGATIVE_VARIABLES = ["CO", "NO2", "NO", "NxOy", "O3", "P2.5", "PP"]
@@ -38,7 +38,7 @@ TEST_SIZE = 0.15
 # ============================================================================
 
 # Arquitectura del modelo
-INPUT_SIZE = 69  # 11 vars + 55 lags (11*5) + 3 temporales
+INPUT_SIZE = 75  # 12 vars + 60 lags (12*5) + 3 temporales
 HIDDEN_SIZES = [128, 64, 32]
 OUTPUT_SIZE = 3  # P2.5, O3, CO
 DROPOUT = 0.2
